@@ -206,12 +206,18 @@ def main(**kwargs):
     )
     if not train_config.enable_fsdp or rank == 0:
         print(f"--> Training Set Length = {len(dataset_train)}")
+        
 
     dataset_val = get_preprocessed_dataset(
         tokenizer,
         dataset_config,
         split="test",
     )
+
+    # View a few examples from the dataset
+    print("Training Set Examples:")
+    for i in range(1):  # Print the first 5 examples
+        print(dataset_train[i])
     if not train_config.enable_fsdp or rank == 0:
         print(f"--> Validation Set Length = {len(dataset_val)}")
 
