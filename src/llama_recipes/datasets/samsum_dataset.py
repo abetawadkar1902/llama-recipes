@@ -17,6 +17,7 @@ def load_data_from_postgres():
     cursor.execute("SELECT content, language FROM repositorytrainingdata")
     rows = cursor.fetchall()
     conn.close()
+    print("DONE")
     return rows
 
 
@@ -31,7 +32,7 @@ def get_preprocessed_samsum(dataset_config, tokenizer, split):
     
     # Convert DataFrame to a Dataset
     dataset = Dataset.from_pandas(df)
-
+    print("DatasetDone -------------------------------------------------------------------------------")
     # Preprocess data
     def preprocess_function(examples):
         # Tokenization and processing
