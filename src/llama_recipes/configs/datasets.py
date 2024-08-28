@@ -9,7 +9,7 @@ class samsum_dataset:
     dataset: str =  "samsum_dataset"
     train_split: str = "train"
     test_split: str = "validation"
-    trust_remote_code: bool = False
+    trust_remote_code: bool = True
 
 
 @dataclass
@@ -24,7 +24,7 @@ class alpaca_dataset:
     dataset: str = "alpaca_dataset"
     train_split: str = "train"
     test_split: str = "val"
-    data_path: str = "src/llama_recipes/datasets/alpaca_data.json"
+    data_path: str = "llama_recipes/src/llama_recipes/datasets/alpaca_data.json"
 
 @dataclass
 class custom_dataset:

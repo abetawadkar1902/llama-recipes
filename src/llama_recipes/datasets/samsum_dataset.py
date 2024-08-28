@@ -3,39 +3,47 @@
 
 # For dataset details visit: https://huggingface.co/datasets/samsum
 
-import copy
-import datasets
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import torch
+from transformers import PreTrainedTokenizer
+import pandas as pd
+from datasets import Dataset
+
+def load_data_from_postgres():
+    # Replace with your PostgreSQL connection details
+    conn = psycopg2.connect("dbname=aitrndb user=dbadmin password=$dAOuGwz8DMa%JcT16E4 host=aitrn-db-stack-postgresdb-e28pitwsqx40.c4zcidhe0q79.us-east-2.rds.amazonaws.com")
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute("SELECT content, language FROM repositorytrainingdata")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
 
 
 def get_preprocessed_samsum(dataset_config, tokenizer, split):
-    if not hasattr(dataset_config, "trust_remote_code") or not dataset_config.trust_remote_code:
-        raise ValueError("The repository for samsum contains custom code which must be executed to correctly load the dataset. You can inspect the repository content at https://hf.co/datasets/samsum. To activate `trust_remote_code` option use this config: --samsum_dataset.trust_remote_code=True")
-    dataset = datasets.load_dataset("samsum", split=split, trust_remote_code=dataset_config.trust_remote_code)
+    # if not hasattr(dataset_config, "trust_remote_code") or not dataset_config.trust_remote_code:
+    #     raise ValueError("The repository for samsum contains custom code which must be executed to correctly load the dataset. You can inspect the repository content at https://hf.co/datasets/samsum. To activate `trust_remote_code` option use this config: --samsum_dataset.trust_remote_code=True")
+    # Load data from PostgreSQL
+    data = load_data_from_postgres()
+    
+    # Convert to a list of dictionaries with 'content' and 'language'
+    df = pd.DataFrame(data)
+    
+    # Convert DataFrame to a Dataset
+    dataset = Dataset.from_pandas(df)
 
-    prompt = (
-        f"Summarize this dialog:\n{{dialog}}\n---\nSummary:\n"
-    )
-
-    def apply_prompt_template(sample):
+    # Preprocess data
+    def preprocess_function(examples):
+        # Tokenization and processing
+        input_texts = examples['content']  # Adjust based on your columns
+        tokenized_inputs = tokenizer(input_texts, padding='max_length', truncation=True)
         return {
-            "prompt": prompt.format(dialog=sample["dialogue"]),
-            "summary": sample["summary"],
+            'input_ids': tokenized_inputs['input_ids'],
+            'attention_mask': tokenized_inputs['attention_mask'],
+            'labels': tokenized_inputs['input_ids'],  # Or adjust if needed
+            'language': examples['language']  # Include language if needed
         }
-
-    dataset = dataset.map(apply_prompt_template, remove_columns=list(dataset.features))
-
-    def tokenize_add_label(sample):
-        prompt = tokenizer.encode(tokenizer.bos_token + sample["prompt"], add_special_tokens=False)
-        summary = tokenizer.encode(sample["summary"] +  tokenizer.eos_token, add_special_tokens=False)
-
-        sample = {
-            "input_ids": prompt + summary,
-            "attention_mask" : [1] * (len(prompt) + len(summary)),
-            "labels": [-100] * len(prompt) + summary,
-            }
-
-        return sample
-
-    dataset = dataset.map(tokenize_add_label, remove_columns=list(dataset.features))
-
+    
+    dataset = dataset.map(preprocess_function, batched=True)
+    
     return dataset
