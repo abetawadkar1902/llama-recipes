@@ -1,6 +1,6 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
-
+from datasets.pl_dataset import get_pl_dataset
 import importlib
 from functools import partial
 from pathlib import Path
@@ -12,6 +12,7 @@ from llama_recipes.datasets import (
     get_alpaca_dataset,
     get_samsum_dataset,
     get_llamaguard_toxicchat_dataset,
+    
 )
 
 
@@ -56,6 +57,7 @@ DATASET_PREPROC = {
     "samsum_dataset": get_samsum_dataset,
     "custom_dataset": get_custom_dataset,
     "llamaguard_toxicchat_dataset": get_llamaguard_toxicchat_dataset,
+    "pl_dataset": get_pl_dataset,
 
 }
 

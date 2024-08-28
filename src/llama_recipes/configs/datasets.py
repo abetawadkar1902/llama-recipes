@@ -39,3 +39,10 @@ class llamaguard_toxicchat_dataset:
     dataset: str = "llamaguard_toxicchat_dataset"
     train_split: str = "train"
     test_split: str = "test"
+
+@dataclass
+class pl_dataset:
+    dataset: str = "pl_dataset"
+    train_split: str = "train"
+    test_split: str = "validation"
+    data_path: str = ""  # This can be left empty if you're loading directly from PostgreSQL
