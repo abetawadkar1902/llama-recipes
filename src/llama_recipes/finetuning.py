@@ -204,6 +204,13 @@ def main(**kwargs):
         dataset_config,
         split="train",
     )
+
+    # View a few examples from the dataset
+    print("Training Set Examples:")
+    
+    print(dataset_train[1])
+
+
     if not train_config.enable_fsdp or rank == 0:
         print(f"--> Training Set Length = {len(dataset_train)}")
         
@@ -214,10 +221,7 @@ def main(**kwargs):
         split="test",
     )
 
-    # View a few examples from the dataset
-    print("Training Set Examples:")
-    for i in range(1):  # Print the first 5 examples
-        print(dataset_train[i])
+    
     if not train_config.enable_fsdp or rank == 0:
         print(f"--> Validation Set Length = {len(dataset_val)}")
 
