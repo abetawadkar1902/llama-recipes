@@ -2,6 +2,8 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import torch
 from transformers import PreTrainedTokenizer
+import pandas as pd
+from datasets import Dataset
 
 def load_data_from_postgres():
     # Replace with your PostgreSQL connection details
@@ -12,29 +14,28 @@ def load_data_from_postgres():
     conn.close()
     return rows
 
-def preprocess_custom_dataset(dataset_config, tokenizer, split: str):
+def get_pl_dataset(dataset_config, tokenizer, split: str):
     # Load data from PostgreSQL
     data = load_data_from_postgres()
     
-    # Preprocess data
-    processed_data = []
-    for item in data:
-        content = item['content']
-        language = item['language']
-        
-        # Tokenize the content
-        tokenized = tokenizer(content, truncation=True, padding='max_length', return_tensors='pt')
-        
-        # Add language to labels (if needed, e.g., as a separate field)
-        # Here we just include it in a dictionary. Adapt according to your use case.
-        processed_data.append({
-            "input_ids": tokenized["input_ids"].squeeze(),
-            "attention_mask": tokenized["attention_mask"].squeeze(),
-            "labels": tokenized["input_ids"].squeeze(),  # Use the same content for labels
-            "language": language  # Include language
-        })
+    # Convert to a list of dictionaries with 'content' and 'language'
+    df = pd.DataFrame(data)
     
-    return processed_data
+    # Convert DataFrame to a Dataset
+    dataset = Dataset.from_pandas(df)
 
-def get_pl_dataset(dataset_config, tokenizer, split: str):
-    return preprocess_custom_dataset(dataset_config, tokenizer, split)
+    # Preprocess data
+    def preprocess_function(examples):
+        # Tokenization and processing
+        input_texts = examples['content']  # Adjust based on your columns
+        tokenized_inputs = tokenizer(input_texts, padding='max_length', truncation=True)
+        return {
+            'input_ids': tokenized_inputs['input_ids'],
+            'attention_mask': tokenized_inputs['attention_mask'],
+            'labels': tokenized_inputs['input_ids'],  # Or adjust if needed
+            'language': examples['language']  # Include language if needed
+        }
+    
+    dataset = dataset.map(preprocess_function, batched=True)
+    
+    return dataset
